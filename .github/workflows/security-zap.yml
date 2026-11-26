@@ -15,28 +15,37 @@ jobs:
         run: |
           docker compose up -d --build --wait
 
-      - name: Verificar que el backend responde
+      - name: Esperar a que el backend responda
         run: |
-          sleep 5
-          curl -f http://localhost:4444/ || exit 1
+          echo "Esperando a que el backend esté listo..."
+          # Intentar 5 veces con pausas de 3 segundos
+          for i in {1..5}; do
+            if curl -s -f http://localhost:4444/ > /dev/null; then
+              echo "¡Backend listo!"
+              exit 0
+            fi
+            echo "Intento $i fallido. Esperando 3 segundos..."
+            sleep 3
+          done
+          echo "El backend no respondió a tiempo."
+          exit 1
 
       - name: Ejecutar ZAP directamente con Docker
         run: |
           mkdir -p .zap
-          # Le damos permisos totales a la carpeta para que Docker pueda escribir
           chmod -R 777 .zap
 
-          # Ejecutamos ZAP (escaneo rápido y pasivo)
-          docker run --rm -v $(pwd)/.zap:/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+
+          docker run --rm --network host -v $(pwd)/.zap:/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:4444 \
             -r report.html \
             -J report.json \
             -c /zap/wrk/rules.tsv
 
-      # Subimos los archivos manualmente usando la acción v4 de GitHub
       - name: Guardar reporte
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: reporte-zap-final
           path: .zap/
+          retention-days: 7
