@@ -28,6 +28,7 @@ jobs:
           rules_file_name: '.zap/rules.tsv'
           allow_issue_writing: false
           fail_action: false   # pon true si quieres que falle el build ante alertas
+          artifact_name: 'reporte-zap'
 
       - name: Guardar reporte
         if: always()
