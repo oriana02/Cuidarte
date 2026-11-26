@@ -1,7 +1,7 @@
 name: OWASP ZAP Security Scan
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -14,7 +14,6 @@ jobs:
       - name: Levantar servicios con Docker Compose
         run: |
           docker compose up -d --build --wait
-          # --wait espera a que los healthchecks pasen
 
       - name: Verificar que el backend responde
         run: |
@@ -24,15 +23,17 @@ jobs:
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: 'http://localhost:4444'
-          rules_file_name: '.zap/rules.tsv'
+          target: "http://localhost:4444"
+          rules_file_name: ".zap/rules.tsv"
           allow_issue_writing: false
-          fail_action: false   # pon true si quieres que falle el build ante alertas
-          artifact_name: 'reporte-zap'
+          fail_action: false
 
+      # Este paso sube el reporte generado por ZAP
       - name: Guardar reporte
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zap-report
-          path: report_html.html
+          name: reporte-zap-final
+          path: |
+            report_html.html
+            report_json.json
