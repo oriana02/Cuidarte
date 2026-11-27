@@ -1,0 +1,21 @@
+execution:
+  - concurrency: 50 # Bajamos a 50 para que no sature tu PC
+    ramp-up: 10
+    hold-for: 30s
+    scenario: carga_login
+
+scenarios:
+  carga_login:
+    requests:
+      - url: http://host.docker.internal:4444/autenticacion/login
+        method: POST
+        headers:
+          Content-Type: application/json
+        body: '{"nombre_usuario":"admin","password":"admin"}'
+        label: "Login de Usuario"
+
+reporting:
+  - module: final-stats
+    summary: true
+    percentiles: true
+    failed-labels: true

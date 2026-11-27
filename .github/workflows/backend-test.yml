@@ -1,4 +1,4 @@
-name: Pruebas Unitarias (Jest)
+name: Backend Test (Jest)
 
 on:
   push:

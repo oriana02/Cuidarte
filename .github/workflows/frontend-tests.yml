@@ -27,5 +27,14 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      - name: Ejecutar tests
-        run: npm test
+      - name: Ejecutar tests con cobertura
+        run: npm run test:coverage # <-- CAMBIA ESTO
+
+      # Opcional: Subir el reporte de cobertura del frontend
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-cobertura-vitest
+          path: FRONTEND/coverage/
+          retention-days: 7
