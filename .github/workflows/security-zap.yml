@@ -1,8 +1,11 @@
 name: OWASP ZAP Security Scan
+
 on:
-  push:
-    branches: [main]
+  push: # se ejecuta en cada push, a cualquier rama
   workflow_dispatch:
+
+permissions:
+  contents: read # el reporte se sube como artefacto, no se necesitan más permisos
 
 jobs:
   zap_scan:
@@ -12,23 +15,30 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Levantar servicios con Docker Compose
-        run: |
-          docker compose up -d --build --wait
+        run: docker compose up -d --build --wait
 
       - name: Esperar a que el backend responda
         run: |
-          for i in {1..5}; do
+          for i in {1..20}; do
             if curl -s -f http://localhost:4444/ > /dev/null; then exit 0; fi
             sleep 3
           done
+          echo "El backend no respondió a tiempo"
+          docker compose logs
           exit 1
+
+      # Evita el "Permission denied" al copiar zap.yaml dentro del contenedor de ZAP
+      - name: Dar permisos de escritura a ZAP
+        run: chmod -R a+w "$GITHUB_WORKSPACE"
 
       - name: Ejecutar ZAP (Acción Oficial)
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: "http://localhost:4444"
-          # Le decimos a ZAP que ignore los WARN para que no falle el pipeline
-          cmd_options: "-I"
-          # ESTA ES LA CLAVE: un nombre de artefacto VÁLIDO (sin guiones)
-          artifact_name: "zap_report"
-          allow_issue_writing: true 
+          cmd_options: "-I" # los WARN no hacen fallar el pipeline
+          artifact_name: "zap_report" # nombre válido, sin guiones
+          allow_issue_writing: false # sin issues: solo el reporte
+
+      - name: Apagar servicios
+        if: always()
+        run: docker compose down -v
