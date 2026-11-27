@@ -27,23 +27,53 @@ jobs:
           docker compose logs
           exit 1
 
+      - name: Esperar a que el frontend responda
+        run: |
+          for i in {1..20}; do
+            if curl -s -f http://localhost:3333/ > /dev/null; then exit 0; fi
+            sleep 3
+          done
+          echo "El frontend no respondió a tiempo"
+          docker compose logs
+          exit 1
+
       - name: Dar permisos de escritura a ZAP
         run: sudo chmod -R a+w "$GITHUB_WORKSPACE" || true
 
-      - name: Ejecutar ZAP
+      - name: Ejecutar ZAP (Backend)
         run: |
           docker run --rm --network=host \
             -v "$GITHUB_WORKSPACE":/zap/wrk/:rw \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://localhost:4444 \
-            -J report_json.json -w report_md.md -r report_html.html -I
+            -J zap_backend.json -w zap_backend.md -r zap_backend.html -I
 
-      - name: Subir reporte
+      - name: Ejecutar ZAP (Frontend)
+        run: |
+          docker run --rm --network=host \
+            -v "$GITHUB_WORKSPACE":/zap/wrk/:rw \
+            ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:3333 \
+            -J zap_frontend.json -w zap_frontend.md -r zap_frontend.html -I
+
+      - name: Subir reporte Backend
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zap_report
+          name: zap_report_backend
+          if-no-files-found: error
           path: |
-            report_json.json
-            report_md.md
-            report_html.html
+            zap_backend.json
+            zap_backend.md
+            zap_backend.html
+
+      - name: Subir reporte Frontend
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap_report_frontend
+          if-no-files-found: error
+          path: |
+            zap_frontend.json
+            zap_frontend.md
+            zap_frontend.html
