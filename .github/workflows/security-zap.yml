@@ -23,29 +23,11 @@ jobs:
           done
           exit 1
 
-      - name: Ejecutar ZAP y generar reporte
-        run: |
-          # 1. Le damos un nombre a nuestro contenedor
-          docker run --name zap-container --network host -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
-            -t http://localhost:4444 \
-            -r /zap/wrk/report.html \
-            -J /zap/wrk/report.json \
-            -I
-
-          # 2. Creamos la carpeta en GitHub Actions
-          mkdir -p .zap
-
-          # 3. Extraemos los archivos del contenedor a nuestra carpeta
-          docker cp zap-container:/zap/wrk/report.html .zap/report.html
-          docker cp zap-container:/zap/wrk/report.json .zap/report.json
-
-          # 4. Borramos el contenedor
-          docker rm zap-container
-
-      - name: Guardar reporte
-        if: always()
-        uses: actions/upload-artifact@v4
+      - name: Ejecutar ZAP (Acción Oficial)
+        uses: zaproxy/action-baseline@v0.12.0
         with:
-          name: reporte-zap-final
-          path: .zap/
-          retention-days: 7
+          target: "http://localhost:4444"
+          # Le decimos a ZAP que ignore los WARN para que no falle el pipeline
+          cmd_options: "-I"
+          # ESTA ES LA CLAVE: un nombre de artefacto VÁLIDO (sin guiones)
+          artifact_name: "zap_report"

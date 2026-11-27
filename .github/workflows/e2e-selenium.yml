@@ -1,0 +1,31 @@
+name: Pruebas E2E (Selenium)
+on:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Levantar servicios
+        run: docker compose up -d --build --wait
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias E2E
+        working-directory: ./tests-e2e
+        run: npm install
+
+      - name: Esperar Frontend
+        run: sleep 15 # Dar tiempo a que el frontend levante
+
+      - name: Ejecutar Selenium
+        working-directory: ./tests-e2e
+        run: npx mocha login.test.js

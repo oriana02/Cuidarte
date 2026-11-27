@@ -1,0 +1,33 @@
+name: Pruebas de Rendimiento (Taurus)
+on:
+  workflow_dispatch: # Ejecución manual
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Levantar servicios
+        run: docker compose up -d --build --wait
+
+      - name: Esperar backend
+        run: sleep 10
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Instalar Taurus
+        run: pip install bzt
+
+      - name: Ejecutar Pruebas de Carga
+        run: bzt taurus.yml -report
+
+      - name: Subir Reporte de Taurus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: taurus-report
+          path: bzt-out/

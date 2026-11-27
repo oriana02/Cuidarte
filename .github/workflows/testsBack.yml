@@ -1,0 +1,45 @@
+name: Pruebas Unitarias (Jest)
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Ejecutar tests
+    runs-on: ubuntu-latest
+
+    # Definimos que trabajaremos dentro de la carpeta BACKEND
+    defaults:
+      run:
+        working-directory: ./BACKEND
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: "./BACKEND/package-lock.json"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar tests con cobertura
+        run: npm test -- --ci --coverage
+
+      # AQUÍ ESTÁ LA MAGIA: Subimos el reporte generado
+      - name: Subir reporte de cobertura como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-cobertura-jest
+          # La ruta es relativa a la raíz del repo, por eso ponemos BACKEND/
+          path: BACKEND/coverage/
+          retention-days: 7
