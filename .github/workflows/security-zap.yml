@@ -31,3 +31,4 @@ jobs:
           cmd_options: "-I"
           # ESTA ES LA CLAVE: un nombre de artefacto VÁLIDO (sin guiones)
           artifact_name: "zap_report"
+          allow_issue_writing: true 
