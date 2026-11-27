@@ -1,11 +1,11 @@
 name: OWASP ZAP Security Scan
 
 on:
-  push: # se ejecuta en cada push, a cualquier rama
+  push:
   workflow_dispatch:
 
 permissions:
-  contents: read # el reporte se sube como artefacto, no se necesitan más permisos
+  contents: read
 
 jobs:
   zap_scan:
@@ -27,17 +27,18 @@ jobs:
           docker compose logs
           exit 1
 
-      # Evita el "Permission denied" al copiar zap.yaml dentro del contenedor de ZAP
+      # Los contenedores crean archivos como root (ej. BACKEND/uploads),
+      # por eso se necesita sudo para abrir los permisos
       - name: Dar permisos de escritura a ZAP
-        run: chmod -R a+w "$GITHUB_WORKSPACE"
+        run: sudo chmod -R a+w "$GITHUB_WORKSPACE" || true
 
       - name: Ejecutar ZAP (Acción Oficial)
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: "http://localhost:4444"
-          cmd_options: "-I" # los WARN no hacen fallar el pipeline
-          artifact_name: "zap_report" # nombre válido, sin guiones
-          allow_issue_writing: false # sin issues: solo el reporte
+          cmd_options: "-I"
+          artifact_name: "zap_report"
+          allow_issue_writing: false
 
       - name: Apagar servicios
         if: always()
